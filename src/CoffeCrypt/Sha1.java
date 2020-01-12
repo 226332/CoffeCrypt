@@ -1,26 +1,3 @@
-/*
-Copyright (c) 2019, 226332
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package CoffeCrypt;
 
 import java.util.ArrayList;
@@ -31,9 +8,11 @@ public class Sha1 implements Hash {
     public static int BYTES_IN_CHUNK = 64;
 
     @Override
-    public String encrypt(String input) {
+    public String hash(String input) {
         int[] hashWords = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
-        // Each message must be processed into 512-bit blocks with additional bit and length information at the end.
+        // Each message must be processed into 512-bit chunks
+        // The last chunk stores appended '1' bit and '0's until
+        // last 64 reserved bits of message size
         for (byte[] chunk : chopMessage(input)) {
             // 512-bit chunk is split into 16 32-bit words.
             int[] chunkWords = chunkToWords(chunk);
@@ -64,7 +43,7 @@ public class Sha1 implements Hash {
         return hashWordsToString(hashWords);
     }
 
-    public String hashWordsToString(int[] hashWords) {
+    private String hashWordsToString(int[] hashWords) {
         StringBuilder sb = new StringBuilder();
         for (int h : hashWords) {
             sb.append(Integer.toUnsignedString(h, 16));
@@ -72,7 +51,7 @@ public class Sha1 implements Hash {
         return sb.toString();
     }
 
-    public int logicalFunc(int t, int b, int c, int d) {
+    private int logicalFunc(int t, int b, int c, int d) {
         assert (t >= 0 && t < 80);
         if (t < 20) {
             return (b & c) | ((~b) & d);
@@ -82,7 +61,7 @@ public class Sha1 implements Hash {
         return (b & c) | (b & d) | (c & d);
     }
 
-    public int getCipherConst(int t) {
+    private int getCipherConst(int t) {
         assert (t >= 0 && t < 80);
         if (t < 20) {
             return 0x5A827999;
@@ -94,7 +73,7 @@ public class Sha1 implements Hash {
         return 0xCA62C1D6;
     }
 
-    public int[] chunkToWords(byte[] chunk) {
+    private int[] chunkToWords(byte[] chunk) {
         int[] words = new int[81];
         for (int i = 0; i < chunk.length / Integer.BYTES; i++) {
             int j = i * Integer.BYTES;
@@ -104,7 +83,7 @@ public class Sha1 implements Hash {
         return words;
     }
 
-    public byte[] padMessage(String input) {
+    private byte[] padMessage(String input) {
         byte[] bytesInput = input.getBytes();
         long inputBits = bytesInput.length * 8;
         int bytesHeader = Long.BYTES + Byte.BYTES;
@@ -118,7 +97,7 @@ public class Sha1 implements Hash {
         return inputPadded;
     }
 
-    public List<byte[]> chopMessage(String input) {
+    private List<byte[]> chopMessage(String input) {
         byte[] inputPadded = padMessage(input);
         assert inputPadded.length % BYTES_IN_CHUNK == 0;
         List<byte[]> chunks = new ArrayList<>();

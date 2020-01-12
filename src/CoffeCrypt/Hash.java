@@ -1,5 +1,5 @@
 package CoffeCrypt;
 
 public interface Hash {
-    String encrypt(String input);
+    String hash(String input);
 }
